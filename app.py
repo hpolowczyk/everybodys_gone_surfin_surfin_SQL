@@ -29,7 +29,6 @@ Station = Base.classes.measurement
 #################################################
 app = Flask(__name__)
 
-
 #################################################
 # Flask Routes
 #################################################
@@ -52,7 +51,6 @@ def welcome():
         f"/api/v1.0/<start>/<end>"
     )
 
-
 @app.route("/api/v1.0/precipitation")
 def precipitation():
     """Return a dictionary with date keys and precipitation values"""
@@ -69,7 +67,6 @@ def precipitation():
         all_prcp.append(prcp_dict)
 
     return jsonify(all_prcp)
-
 
 @app.route("/api/v1.0/stations")
 def stations():
@@ -105,23 +102,29 @@ def tobs():
 def date(start):
     """Return list of minimum temp, average temp and max temp for a given start date"""
     session = Session(engine)
+    # Query temperature stats (i.e. minimum, average, maximum) for all dates greater than and equal to the start date
     date_stats = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
             filter(Measurement.date >= start).all()
     # Convert list of tuples into normal list
     date_lst = list(np.ravel(date_stats))
+
+    # If the first element is null, then return an error statement
     if date_lst[0] is None:
         return jsonify({"error": f"Temperature stats for {start} was not found. Please choose an earlier date."}), 404
     return jsonify(date_lst)
 
 @app.route("/api/v1.0/<start>/<end>")
 def date_range(start,end):
-    """Return list of minimum temp, average temp and max temp for a given start date"""
+    """Return list of minimum temp, average temp and max temp for a given start and end dates"""
     session = Session(engine)
+    # Query temperature stats (i.e. minimum, average, maximum) for all dates between the start and end date (inclusive)
     range_stats = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
             filter(Measurement.date >= start).filter(Measurement.date <= end).all()
 
     # Convert list of tuples into normal list
     range_lst = list(np.ravel(range_stats))
+
+    # If the first element is null, then return an error statement
     if range_lst[0] is None:
         return jsonify({"error": f"Temperature stats for date range {start} to {end} was not found. Please choose another date range."}), 404
     return jsonify(range_lst) 
